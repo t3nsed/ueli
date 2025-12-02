@@ -1,4 +1,4 @@
-import { createOpenFileAction, type SearchResultItem } from "@common/Core";
+import { createOpenFileAction, type SearchResultItem, createOpenUrlSearchResultAction } from "@common/Core";
 import type { SystemSetting } from "./SystemSetting";
 
 export class MacOsSystemSetting implements SystemSetting {
@@ -6,6 +6,7 @@ export class MacOsSystemSetting implements SystemSetting {
         private readonly name: string,
         private readonly filePath: string,
         private readonly imageFilePath: string,
+        private readonly deepLink?: string,
     ) {}
 
     public toSearchResultItem(): SearchResultItem {
@@ -13,10 +14,12 @@ export class MacOsSystemSetting implements SystemSetting {
             id: this.getId(),
             name: this.name,
             description: "System Setting",
-            defaultAction: createOpenFileAction({
-                filePath: this.filePath,
-                description: "Open System Setting",
-            }),
+            defaultAction: this.deepLink
+                ? createOpenUrlSearchResultAction({ url: this.deepLink })
+                : createOpenFileAction({
+                      filePath: this.filePath,
+                      description: "Open System Setting",
+                  }),
             details: this.filePath,
             image: { url: this.getImageUrl() },
         };

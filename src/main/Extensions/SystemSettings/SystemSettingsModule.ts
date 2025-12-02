@@ -8,12 +8,17 @@ import type { SystemSettingRepository } from "./SystemSettingRepository";
 import { SystemSettingsExtension } from "./SystemSettingsExtension";
 import { WindowsSystemSettingActionHandler } from "./WindowsSystemSettingActionHandler";
 import { WindowsSystemSettingsRepository } from "./WindowsSystemSettingRepository";
+import { MacOsSystemSettingsSearchActionHandler } from "./MacOsSystemSettingsSearchActionHandler";
 
 export class SystemSettingsModule implements ExtensionModule {
     public bootstrap(moduleRegistry: UeliModuleRegistry): ExtensionBootstrapResult {
         const systemSettingRepositories: Record<OperatingSystem, SystemSettingRepository> = {
             Linux: new LinuxSystemSettingRepository(),
-            macOS: new MacOsSystemSettingRepository(moduleRegistry.get("AssetPathResolver")),
+            macOS: new MacOsSystemSettingRepository(
+                moduleRegistry.get("AssetPathResolver"),
+                moduleRegistry.get("FileSystemUtility"),
+                moduleRegistry.get("XmlParser"),
+            ),
             Windows: new WindowsSystemSettingsRepository(moduleRegistry.get("AssetPathResolver")),
         };
 
@@ -23,7 +28,17 @@ export class SystemSettingsModule implements ExtensionModule {
                 systemSettingRepositories[moduleRegistry.get("OperatingSystem")],
                 moduleRegistry.get("AssetPathResolver"),
             ),
-            actionHandlers: [new WindowsSystemSettingActionHandler(moduleRegistry.get("PowershellUtility"))],
+            actionHandlers: [
+                new WindowsSystemSettingActionHandler(moduleRegistry.get("PowershellUtility")),
+                ...(moduleRegistry.get("OperatingSystem") === "macOS"
+                    ? [
+                          new MacOsSystemSettingsSearchActionHandler(
+                              moduleRegistry.get("SystemPreferences"),
+                              moduleRegistry.get("CommandlineUtility"),
+                          ),
+                      ]
+                    : []),
+            ],
         };
     }
 }

@@ -1,5 +1,6 @@
 import type { AssetPathResolver } from "@Core/AssetPathResolver";
 import type { Extension } from "@Core/Extension";
+import { createEmptyInstantSearchResult, type InstantSearchResultItems } from "@common/Core";
 import type { OperatingSystem, SearchResultItem } from "@common/Core";
 import type { Image } from "@common/Core/Image";
 import type { SystemSettingRepository } from "./SystemSettingRepository";
@@ -23,6 +24,36 @@ export class SystemSettingsExtension implements Extension {
         private readonly systemSettingRepository: SystemSettingRepository,
         private readonly assetPathResolver: AssetPathResolver,
     ) {}
+
+    public getInstantSearchResultItems(searchTerm: string): InstantSearchResultItems {
+        if (this.operatingSystem !== "macOS") {
+            return createEmptyInstantSearchResult();
+        }
+
+        const term = searchTerm.trim();
+
+        if (!term.length) {
+            return createEmptyInstantSearchResult();
+        }
+
+        return {
+            after: [
+                {
+                    id: "system-settings-search",
+                    name: `Search System Settings for "${term}"`,
+                    description: "macOS",
+                    image: this.getImage(),
+                    defaultAction: {
+                        handlerId: "MacOsSystemSettingsSearch",
+                        argument: term,
+                        description: "Search in System Settings",
+                        hideWindowAfterInvocation: true,
+                    },
+                },
+            ],
+            before: [],
+        };
+    }
 
     public async getSearchResultItems(): Promise<SearchResultItem[]> {
         return this.systemSettingRepository.getAll().map((s) => s.toSearchResultItem());
